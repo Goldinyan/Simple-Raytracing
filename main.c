@@ -94,8 +94,7 @@ void draw_rays(SDL_Surface *surface, ray_t rays[RAYS_NUMBER], Uint32 color,
       // Like this it doesnt just stop when the center of the light_source
       // is in the cicle.
       // It simulates the light coming from the actual edge of the surface
-      // we garantue the light to atleast come to the edge before getting 
-      // compared
+      // we garantuee
 
 
       double light_source_distance_squared =
