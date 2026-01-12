@@ -13,8 +13,8 @@
 #define HEIGHT 600
 #define COLOR_WHITE 0xffffffff
 #define COLOR_BLACK 0x00000000
-#define COLOR_RAY_1 0xffe066
-#define COLOR_RAY_2 0xffec99
+#define COLOR_RAY_1 0xffec99
+#define COLOR_RAY_2 0xffe066
 #define COLOR_RAY_3 0xffd43b
 #define COLOR_RAY_4 0xe6bf35
 #define COLOR_RAY_5 0xccaa2f
@@ -211,7 +211,20 @@ int hit_circles(int x, int y, circle_t circles[], int circle_count)
     return 0;
 }
 
-int hit_rectangles(int x, int y, rectangle_t rectangles[], int rectangle_count)
+int in_mirror(int x, int y, rectangle_t *mirrors, int mirrors_count)
+{
+    for (int i = 0; i < mirrors_count; i++)
+    {
+        if (x >= mirrors[i].x &&
+            x <= mirrors[i].x + mirrors[i].w &&
+            y >= mirrors[i].y &&
+            y <= mirrors[i].y + mirrors[i].h)
+            return 1;
+    }
+
+    return 0;
+}
+int hit_rectangles(int x, int y, rectangle_t *rectangles, int rectangle_count)
 {
     for (int i = 0; i < rectangle_count; i++)
     {
@@ -225,7 +238,7 @@ int hit_rectangles(int x, int y, rectangle_t rectangles[], int rectangle_count)
     return 0;
 }
 
-void check_hit_mirrors(ray_t *ray, rectangle_t mirrors[], int mirrors_count)
+void check_hit_mirrors(ray_t *ray, rectangle_t *mirrors, int mirrors_count)
 {
     for (int i = 0; i < mirrors_count; i++)
     {
@@ -252,13 +265,14 @@ int out_of_screen(int x, int y)
 
 void draw_single_ray(SDL_Surface *surface, ray_t ray, circle_t base_source)
 {
-
+    int r = rand() % 300;
     double dist;
 
     double dx = ray.x - base_source.x;
     double dy = ray.y - base_source.y;
 
-    dist = dx * dx + dy * dy;
+    dist = (dx * dx + dy * dy) / (200 + r);
+    // printf("%f\n", dist);
 
     uint32_t ray_color;
 
@@ -273,7 +287,7 @@ void draw_single_ray(SDL_Surface *surface, ray_t ray, circle_t base_source)
     else if (dist < 250)
         ray_color = COLOR_RAY_5;
     else
-        ray_color = COLOR_RAY_3;
+        ray_color = COLOR_RAY_6;
 
     SDL_Rect ray_point =
         (SDL_Rect){ray.x, ray.y, RAY_THICKNESS, RAY_THICKNESS};
@@ -292,9 +306,7 @@ void draw_all_rays(SDL_Surface *surface, state_t *state)
 
             ray_t ray = state->light_sources[i].rays[x];
 
-            size_t reached_end_of_screen = 0;
-
-            while (!reached_end_of_screen)
+            while (1)
             {
 
                 ray.x += ray.dx;
@@ -326,6 +338,8 @@ void draw_all_rays(SDL_Surface *surface, state_t *state)
                     if (hit_rectangles(ray.x, ray.y, state->rectangles, state->rectangle_count))
                         break;
 
+                    if (in_mirror(ray.x, ray.y, state->mirrors, state->mirror_count))
+                        break;
                     check_hit_mirrors(&ray, state->mirrors, state->mirror_count);
 
                     // mirror collision horizontal
@@ -335,19 +349,17 @@ void draw_all_rays(SDL_Surface *surface, state_t *state)
     }
 }
 
-void generate_rays(light_source_t *light_sources[], int light_source_count)
-{ // array is empty
-
+void generate_rays(light_source_t *light_sources, int light_source_count)
+{
     for (int x = 0; x < light_source_count; x++)
     {
-
         for (size_t i = 0; i < RAYS_NUMBER; i++)
         {
             double angle = ((double)i / RAYS_NUMBER) * 2 * M_PI;
             double dy = sin(angle);
             double dx = cos(angle);
-            ray_t ray = {light_sources[x]->circle.x, light_sources[x]->circle.y, dx, dy};
-            light_sources[x]->rays[i] = ray;
+            ray_t ray = {light_sources[x].circle.x, light_sources[x].circle.y, dx, dy};
+            light_sources[x].rays[i] = ray;
         }
     }
 }
@@ -378,6 +390,17 @@ void setup_state(state_t *s)
     s->mirror_count = 1;
 }
 
+void draw_light_sources(SDL_Surface *surface,
+                        light_source_t *lights,
+                        size_t count,
+                        Uint32 color)
+{
+    for (size_t i = 0; i < count; i++)
+    {
+        circle_t *c = &lights[i].circle;
+        draw_circles(surface, c, 1, color);
+    }
+}
 void update_fps(int *fps, Uint32 *last_time, double *frame_counter)
 {
     Uint32 current = SDL_GetTicks();
@@ -400,6 +423,7 @@ void update_fps(int *fps, Uint32 *last_time, double *frame_counter)
 
 int main(void)
 {
+
     if (SDL_Init(SDL_INIT_VIDEO) != 0)
     {
         printf("SDL_Init error: %s\n", SDL_GetError());
@@ -416,6 +440,8 @@ int main(void)
         SDL_Quit();
         return 1;
     }
+
+    srand((unsigned)time(NULL));
 
     state_t state;
 
@@ -435,7 +461,7 @@ int main(void)
     int simulation_running = 1;
     int auto_movement = 1;
 
-    generate_rays(&state.light_sources, state.light_source_count);
+    generate_rays(state.light_sources, state.light_source_count);
 
     while (simulation_running)
     {
@@ -445,6 +471,7 @@ int main(void)
         draw_rectangles(surface, state.rectangles, state.rectangle_count, COLOR_WHITE);
         draw_rectangles(surface, state.mirrors, state.mirror_count, COLOR_WHITE);
         draw_all_rays(surface, &state);
+        draw_light_sources(surface, state.light_sources, state.light_source_count, COLOR_WHITE);
         SDL_UpdateWindowSurface(window);
 
         if (auto_movement)
@@ -468,7 +495,9 @@ int main(void)
             {
                 mouse_x = e.motion.x;
                 mouse_y = e.motion.y;
-                generate_rays(&state.light_sources, state.light_source_count);
+                state.light_sources[0].circle.x = mouse_x;
+                state.light_sources[0].circle.y = mouse_y;
+                generate_rays(state.light_sources, state.light_source_count);
             }
 
             if (e.type == SDL_KEYDOWN)
