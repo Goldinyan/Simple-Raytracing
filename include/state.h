@@ -3,11 +3,11 @@
 
 #include <stdio.h>
 
-#define WIDTH 1200
-#define HEIGHT 600
+#define WIDTH 1500
+#define HEIGHT 800
 #define COLOR_WHITE 0xffffffff
 #define COLOR_BLACK 0x00000000
-#define RAYS_NUMBER 150
+#define RAYS_NUMBER 100
 #define RAY_THICKNESS 1
 #define COLOR_RAY_1 0xffec99
 #define COLOR_RAY_2 0xffe066

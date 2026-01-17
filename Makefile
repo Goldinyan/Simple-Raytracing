@@ -1,6 +1,9 @@
-CC = gcc
-CFLAGS = -Wall -Wextra -std=c11 -Iinclude -I/opt/homebrew/include
-LDFLAGS = -L/opt/homebrew/lib -lSDL2
+CC = clang
+
+CFLAGS = -Wall -Wextra -std=c11 -Iinclude -I/opt/homebrew/include \
+         -fsanitize=address -g -O0
+
+LDFLAGS = -fsanitize=address -L/opt/homebrew/lib -lSDL2
 
 SRC = $(wildcard src/*.c)
 OBJ = $(patsubst src/%.c, object_files/%.o, $(SRC))
@@ -18,3 +21,4 @@ object_files/%.o: src/%.c
 
 clean:
 	rm -f object_files/*.o $(TARGET)
+

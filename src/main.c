@@ -1,30 +1,12 @@
 #include "SDL2/SDL_events.h"
 #include "SDL2/SDL_keycode.h"
-#include "SDL2/SDL_rect.h"
 #include "SDL2/SDL_stdinc.h"
 #include "SDL2/SDL_surface.h"
 #include <SDL2/SDL.h>
-#include <math.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 #include "draw.h"
 #include "state.h"
 #include "update.h"
-
-#define WIDTH 1200
-#define HEIGHT 600
-#define COLOR_WHITE 0xffffffff
-#define COLOR_BLACK 0x00000000
-#define COLOR_RAY_1 0xffec99
-#define COLOR_RAY_2 0xffe066
-#define COLOR_RAY_3 0xffd43b
-#define COLOR_RAY_4 0xe6bf35
-#define COLOR_RAY_5 0xccaa2f
-#define COLOR_RAY_6 0xb39529
-#define RAYS_NUMBER 150
-#define RAY_THICKNESS 1
 
 void *get_selected_object(state_t *s)
 {
@@ -43,16 +25,88 @@ void *get_selected_object(state_t *s)
     }
 }
 
-void change_obj_by_pattern(pattern_t pattern, int w, int h, int r)
-{
-}
-
 void track_input(pattern_t pattern, state_t *state)
 {
     void *obj = get_selected_object(state);
 
     switch (state->selection.type)
     {
+    case SELECT_CIRCLE:
+    {
+        circle_t *c = obj;
+        if (pattern == INCREASE_HEIGHT || pattern == INCREASE_WIDTH)
+            c->r++;
+        else if (pattern == DECREASE_HEIGHT || pattern == DECREASE_WIDTH)
+            c->r--;
+    }
+    break;
+
+    case SELECT_RECTANGLE:
+    {
+        rectangle_t *r = obj;
+        switch (pattern)
+        {
+        case INCREASE_WIDTH:
+            r->w++;
+            break;
+        case INCREASE_HEIGHT:
+            r->h++;
+            break;
+        case DECREASE_WIDTH:
+            r->w--;
+            break;
+
+        case DECREASE_HEIGHT:
+            r->h--;
+            break;
+        case ROTATE:
+            r->angle++;
+            break;
+        }
+    }
+    break;
+
+    case SELECT_LIGHT:
+    {
+        light_source_t *l = obj;
+
+        if (pattern == INCREASE_HEIGHT || pattern == INCREASE_WIDTH)
+            l->circle.r++;
+        else if (pattern == DECREASE_HEIGHT || pattern == DECREASE_WIDTH)
+            l->circle.r--;
+    }
+    break;
+
+    case SELECT_MIRROR:
+    {
+        mirror_t *m = obj;
+        switch (pattern)
+        {
+        case INCREASE_WIDTH:
+            m->w++;
+            break;
+        case INCREASE_HEIGHT:
+            m->h++;
+            break;
+        case DECREASE_WIDTH:
+            m->w--;
+            break;
+
+        case DECREASE_HEIGHT:
+            m->h--;
+            break;
+        case ROTATE:
+            m->angle++;
+            break;
+        }
+    }
+    break;
+
+    case SELECT_NONE:
+        break;
+
+    default:
+        break;
     }
 }
 
@@ -60,11 +114,45 @@ void track_mouse_movement(double x, double y, state_t *state)
 {
     void *obj = get_selected_object(state);
 
-    if (state->selection.type == SELECT_CIRCLE)
+    switch (state->selection.type)
+    {
+    case SELECT_CIRCLE:
     {
         circle_t *c = obj; // impliziter cast von void* zu circle_t*
         c->x = x;
         c->y = y;
+    }
+    break;
+
+    case SELECT_RECTANGLE:
+    {
+        rectangle_t *r = obj;
+        r->x = x;
+        r->y = y;
+    }
+    break;
+
+    case SELECT_LIGHT:
+    {
+        light_source_t *l = obj;
+        l->circle.x = x;
+        l->circle.y = y;
+    }
+    break;
+
+    case SELECT_MIRROR:
+    {
+        mirror_t *m = obj;
+        m->x = x;
+        m->y = y;
+    }
+    break;
+
+    case SELECT_NONE:
+        break;
+
+    default:
+        break;
     }
 }
 
@@ -82,6 +170,7 @@ void move_circle(circle_t *c)
     }
     c->y += c->v;
 }
+
 
 void move_rectangle(rectangle_t *t)
 {
@@ -116,11 +205,11 @@ void setup_state(state_t *s)
     // Object Rectangles
     s->rectangles = calloc(1, sizeof(rectangle_t));
     s->rectangle_count = 1;
-    s->rectangles[0] = (rectangle_t){300, 40, 2, 100, 10};
+    s->rectangles[0] = (rectangle_t){300, 40, 2, 100, 10, 0};
 
     // Mirrors
     s->mirrors = calloc(1, sizeof(mirror_t));
-    s->mirrors[0] = (mirror_t){300, 400, 2, 100, 80};
+    s->mirrors[0] = (mirror_t){300, 400, 50, 20, 0};
     s->mirror_count = 1;
 }
 
@@ -192,7 +281,7 @@ int main(void)
         SDL_FillRect(surface, NULL, COLOR_BLACK); // NULL -> fill full surface
         draw_circles(surface, state.circles, state.circle_count, COLOR_WHITE);
         draw_rectangles(surface, state.rectangles, state.rectangle_count, COLOR_WHITE);
-        draw_rectangles(surface, state.mirrors, state.mirror_count, COLOR_WHITE);
+        draw_mirrors(surface, state.mirrors, state.mirror_count, COLOR_WHITE);
         draw_all_rays(surface, &state);
         draw_light_sources(surface, state.light_sources, state.light_source_count, COLOR_WHITE);
         SDL_UpdateWindowSurface(window);
