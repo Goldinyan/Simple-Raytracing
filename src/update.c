@@ -1,8 +1,8 @@
-#include <stdio.h>
 #include <math.h>
+#include <stdio.h>
 
-#include "update.h"
 #include "state.h"
+#include "update.h"
 
 int hit_circles(int x, int y, circle_t circles[], int circle_count)
 {
@@ -49,14 +49,14 @@ void check_hit_mirrors(ray_t *ray, mirror_t *mirrors, int mirrors_count)
 {
     for (int i = 0; i < mirrors_count; i++)
     {
-        if ((fabs(ray->x - mirrors[i].x) < 0.5 || fabs(ray->x - (mirrors[i].x + mirrors[i].w)) < 0.5) &&
+        if ((fabs(ray->x - mirrors[i].x) < 0.7 || fabs(ray->x - (mirrors[i].x + mirrors[i].w)) < 0.7) &&
             ray->y >= mirrors[i].y &&
             ray->y <= mirrors[i].y + mirrors[i].h)
         {
             ray->dx = -ray->dx;
         }
 
-        if ((fabs(ray->y - mirrors[i].y) < 0.5 || fabs(ray->y - (mirrors[i].y + mirrors[i].h)) < 0.5) &&
+        if ((fabs(ray->y - mirrors[i].y) < 0.7 || fabs(ray->y - (mirrors[i].y + mirrors[i].h)) < 0.7) &&
             ray->x >= mirrors[i].x &&
             ray->x <= mirrors[i].x + mirrors[i].w)
         {

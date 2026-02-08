@@ -7,6 +7,8 @@
 #define HEIGHT 800
 #define COLOR_WHITE 0xffffffff
 #define COLOR_BLACK 0x00000000
+#define COLOR_BLUE 0xffec99
+
 #define RAYS_NUMBER 100
 #define RAY_THICKNESS 1
 #define COLOR_RAY_1 0xffec99

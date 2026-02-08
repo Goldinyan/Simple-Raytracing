@@ -171,7 +171,6 @@ void move_circle(circle_t *c)
     c->y += c->v;
 }
 
-
 void move_rectangle(rectangle_t *t)
 {
     if (t->x < 0)
@@ -195,12 +194,12 @@ void setup_state(state_t *s)
     s->circle_count = 1;
 
     // Light sources
-    s->light_sources = calloc(1, sizeof(light_source_t));
-    s->light_source_count = 1;
-    // Setting circle
+    s->light_sources = calloc(2, sizeof(light_source_t));
+    s->light_source_count = 2;
     s->light_sources[0].circle = (circle_t){200, 200, 40, 0};
-    // rays allocating
     s->light_sources[0].rays = calloc(RAYS_NUMBER, sizeof(ray_t));
+    s->light_sources[1].circle = (circle_t){500, 200, 40, 0};
+    s->light_sources[1].rays = calloc(RAYS_NUMBER, sizeof(ray_t));
 
     // Object Rectangles
     s->rectangles = calloc(1, sizeof(rectangle_t));
@@ -209,8 +208,11 @@ void setup_state(state_t *s)
 
     // Mirrors
     s->mirrors = calloc(1, sizeof(mirror_t));
-    s->mirrors[0] = (mirror_t){300, 400, 50, 20, 0};
+    s->mirrors[0] = (mirror_t){300, 400, 50, 100, 0};
     s->mirror_count = 1;
+
+    s->selection.type = SELECT_LIGHT;
+    s->selection.index = 0;
 }
 
 void update_fps(int *fps, Uint32 *last_time, double *frame_counter)
@@ -279,11 +281,11 @@ int main(void)
     {
 
         SDL_FillRect(surface, NULL, COLOR_BLACK); // NULL -> fill full surface
-        draw_circles(surface, state.circles, state.circle_count, COLOR_WHITE);
-        draw_rectangles(surface, state.rectangles, state.rectangle_count, COLOR_WHITE);
-        draw_mirrors(surface, state.mirrors, state.mirror_count, COLOR_WHITE);
+        draw_circles(surface, &state, COLOR_WHITE);
+        draw_rectangles(surface, &state, COLOR_WHITE);
+        draw_mirrors(surface, &state, COLOR_WHITE);
         draw_all_rays(surface, &state);
-        draw_light_sources(surface, state.light_sources, state.light_source_count, COLOR_WHITE);
+        draw_light_sources(surface, &state, COLOR_WHITE);
         SDL_UpdateWindowSurface(window);
 
         if (auto_movement)
