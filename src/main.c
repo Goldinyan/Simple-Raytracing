@@ -195,11 +195,9 @@ void setup_state(state_t *s)
 
     // Light sources
     s->light_sources = calloc(2, sizeof(light_source_t));
-    s->light_source_count = 2;
+    s->light_source_count = 1;
     s->light_sources[0].circle = (circle_t){200, 200, 40, 0};
     s->light_sources[0].rays = calloc(RAYS_NUMBER, sizeof(ray_t));
-    s->light_sources[1].circle = (circle_t){500, 200, 40, 0};
-    s->light_sources[1].rays = calloc(RAYS_NUMBER, sizeof(ray_t));
 
     // Object Rectangles
     s->rectangles = calloc(1, sizeof(rectangle_t));

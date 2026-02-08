@@ -16,16 +16,44 @@ void draw_mirrors(SDL_Surface *surface, state_t *state, Uint32 color)
 
     size_t selected_index = state->selection.type == SELECT_MIRROR ? state->selection.index : -1;
 
+    SDL_LockSurface(surface);
+
+    Uint32 *pixels = (Uint32 *)surface->pixels;
+    int pitch = surface->pitch / 4;
+
     for (size_t i = 0; i < mirror_count; i++)
     {
-        if (selected_index == i)
+        int x0 = mirrors[i].x;
+        int x1 = mirrors[i].x + mirrors[i].w;
+        int y0 = mirrors[i].y;
+        int y1 = mirrors[i].y + mirrors[i].h;
+
+        double t = 2.5;
+
+        for (int x = x0; x < x1; x++)
         {
-            SDL_Rect rect_bg = (SDL_Rect){mirrors[i].x - 2, mirrors[i].y - 2, mirrors[i].w + 4, mirrors[i].h + 4};
-            SDL_FillRect(surface, &rect_bg, COLOR_BLUE);
+            for (int y = y0; y < y1; y++)
+            {
+                int dx = x - x0;
+                int dy = y - y0;
+
+                int border_dist = (dx < dy) ? dx : dy;
+                int inner_dist = ((x1 - x) < (y1 - y)) ? (x1 - x) : (y1 - y);
+                int min_dist = (border_dist < inner_dist) ? border_dist : inner_dist;
+
+                if (min_dist <= (int)t && selected_index == i)
+                {
+                    pixels[y * pitch + x] = COLOR_BLUE;
+                }
+                else
+                {
+                    pixels[y * pitch + x] = color;
+                }
+            }
         }
-        SDL_Rect rect = (SDL_Rect){mirrors[i].x, mirrors[i].y, mirrors[i].w, mirrors[i].h};
-        SDL_FillRect(surface, &rect, color);
     }
+
+    SDL_UnlockSurface(surface);
 }
 
 void draw_rectangles(SDL_Surface *surface, state_t *state, Uint32 color)
@@ -35,16 +63,44 @@ void draw_rectangles(SDL_Surface *surface, state_t *state, Uint32 color)
 
     size_t selected_index = state->selection.type == SELECT_RECTANGLE ? state->selection.index : -1;
 
+    SDL_LockSurface(surface);
+
+    Uint32 *pixels = (Uint32 *)surface->pixels;
+    int pitch = surface->pitch / 4;
+
     for (size_t i = 0; i < rectangle_count; i++)
     {
-        if (selected_index == i)
+        int x0 = rectangles[i].x;
+        int x1 = rectangles[i].x + rectangles[i].w;
+        int y0 = rectangles[i].y;
+        int y1 = rectangles[i].y + rectangles[i].h;
+
+        double t = 2.5;
+
+        for (int x = x0; x < x1; x++)
         {
-            SDL_Rect rect_bg = (SDL_Rect){rectangles[i].x - 2, rectangles[i].y - 2, rectangles[i].w + 4, rectangles[i].h + 4};
-            SDL_FillRect(surface, &rect_bg, COLOR_BLUE);
+            for (int y = y0; y < y1; y++)
+            {
+                int dx = x - x0;
+                int dy = y - y0;
+
+                int border_dist = (dx < dy) ? dx : dy;
+                int inner_dist = ((x1 - x) < (y1 - y)) ? (x1 - x) : (y1 - y);
+                int min_dist = (border_dist < inner_dist) ? border_dist : inner_dist;
+
+                if (min_dist <= (int)t && selected_index == i)
+                {
+                    pixels[y * pitch + x] = COLOR_BLUE;
+                }
+                else
+                {
+                    pixels[y * pitch + x] = color;
+                }
+            }
         }
-        SDL_Rect rect = (SDL_Rect){rectangles[i].x, rectangles[i].y, rectangles[i].w, rectangles[i].h};
-        SDL_FillRect(surface, &rect, color);
     }
+
+    SDL_UnlockSurface(surface);
 }
 
 void draw_circles(SDL_Surface *surface, state_t *state, Uint32 color)
@@ -53,33 +109,48 @@ void draw_circles(SDL_Surface *surface, state_t *state, Uint32 color)
     circle_t *circles = state->circles;
     size_t selected_index = state->selection.type == SELECT_CIRCLE ? state->selection.index : -1;
 
+    SDL_LockSurface(surface);
+
+    Uint32 *pixels = (Uint32 *)surface->pixels;
+    int pitch = surface->pitch / 4;
+
     for (size_t i = 0; i < circle_count; i++)
     {
+        double r = circles[i].r;
+        double r2 = r * r;
 
-        double radius_squared = pow(circles[i].r, 2);
+        int x0 = (int)(circles[i].x - r);
+        int x1 = (int)(circles[i].x + r);
+        int y0 = (int)(circles[i].y - r);
+        int y1 = (int)(circles[i].y + r);
 
-        // Only looping through the rectangle created from the cirle for perfomance
+        double t = 2.5;
+        double inner2 = (r - t) * (r - t);
 
-        for (double x = circles[i].x - circles[i].r; x < circles[i].x + circles[i].r; x++)
+        for (int x = x0; x < x1; x++)
         {
-            for (double y = circles[i].y - circles[i].r; y < circles[i].y + circles[i].r; y++)
+            for (int y = y0; y < y1; y++)
             {
+                double dx = x - circles[i].x;
+                double dy = y - circles[i].y;
+                double d2 = dx * dx + dy * dy;
 
-                double distance_squared = pow(x - circles[i].x, 2) + pow(y - circles[i].y, 2);
-
-                if (distance_squared < radius_squared)
+                if (d2 < r2 && d2 > inner2)
                 {
                     if (selected_index == i)
-                    {
-                        SDL_Rect pixel_bg = (SDL_Rect){x - 1, y - 1, 3, 3};
-                        SDL_FillRect(surface, &pixel_bg, COLOR_BLUE);
-                    }
-                    SDL_Rect pixel = (SDL_Rect){x, y, 1, 1};
-                    SDL_FillRect(surface, &pixel, color);
+                        pixels[y * pitch + x] = COLOR_BLUE;
+                    else
+                        pixels[y * pitch + x] = color;
+                }
+                else if (d2 < r2)
+                {
+                    pixels[y * pitch + x] = color;
                 }
             }
         }
     }
+
+    SDL_UnlockSurface(surface);
 }
 
 void draw_single_ray(SDL_Surface *surface, ray_t ray, circle_t base_source)
@@ -88,7 +159,7 @@ void draw_single_ray(SDL_Surface *surface, ray_t ray, circle_t base_source)
     double dy = ray.y - base_source.y;
     double dist = sqrt(dx * dx + dy * dy);
 
-    double brightness = 1.0 - (dist / 500.0);
+    double brightness = 1.0 - (dist / 500.0); // intensity
     if (brightness < 0.1)
         brightness = 0.1;
     if (brightness > 1.0)
@@ -100,10 +171,10 @@ void draw_single_ray(SDL_Surface *surface, ray_t ray, circle_t base_source)
 
     uint32_t ray_color = (r << 16) | (g << 8) | b;
 
-//  [Byte 3:Red] [Byte 2:Green] [Byte 1:Blue] [Byte 0:Unused] 
-//  16 - 23      8 - 15           0 - 7
+    //  [Byte 3:Red] [Byte 2:Green] [Byte 1:Blue] [Byte 0:Unused]
+    //  16 - 23      8 - 15           0 - 7
 
-        SDL_Rect ray_point =
+    SDL_Rect ray_point =
         (SDL_Rect){ray.x, ray.y, RAY_THICKNESS, RAY_THICKNESS};
     SDL_FillRect(surface, &ray_point, ray_color);
 }
@@ -163,45 +234,59 @@ void draw_all_rays(SDL_Surface *surface, state_t *state)
     }
 }
 
-void draw_light_sources(SDL_Surface *surface,
-                        state_t *state, Uint32 color)
+void draw_light_sources(SDL_Surface *surface, state_t *state, Uint32 color)
 {
-    size_t light_source_count = state->light_source_count;
-    light_source_t *light_source = state->light_sources;
-    size_t selected_index = state->selection.type == SELECT_LIGHT ? state->selection.index : -1;
+    size_t count = state->light_source_count;
+    light_source_t *lights = state->light_sources;
 
-    for (size_t i = 0; i < light_source_count; i++)
+    size_t selected = (state->selection.type == SELECT_LIGHT)
+                          ? state->selection.index
+                          : (size_t)-1;
+
+    SDL_LockSurface(surface);
+
+    Uint32 *pixels = (Uint32 *)surface->pixels;
+    int pitch = surface->pitch / 4; // convert bytes to pixels
+
+    for (size_t i = 0; i < count; i++)
     {
+        circle_t c = lights[i].circle;
 
-        for (size_t i = 0; i < light_source_count; i++)
+        double r = c.r;
+        double r2 = r * r;
+
+        int x0 = (int)(c.x - r);
+        int x1 = (int)(c.x + r);
+        int y0 = (int)(c.y - r);
+        int y1 = (int)(c.y + r);
+
+        for (int x = x0; x < x1; x++)
         {
-
-            circle_t circle = light_source[i].circle;
-
-            double radius_squared = pow(circle.r, 2);
-
-            // Only loopng through the rectangle created from the cirle for perfomance
-
-            for (double x = circle.x - circle.r; x < circle.x + circle.r; x++)
+            for (int y = y0; y < y1; y++)
             {
-                for (double y = circle.y - circle.r; y < circle.y + circle.r; y++)
+                double dx = x - c.x;
+                double dy = y - c.y;
+                double d2 = dx * dx + dy * dy;
+
+                double t = 2.5;
+
+                double inner2 = (r - t) * (r - t);
+
+                // because everything is squared, we can just substract
+                // t from r and then square it, instead of doing sqrt and
+                // then substracting t and then squaring again
+
+                if (d2 < r2 && d2 > inner2)
                 {
-
-                    double distance_squared = pow(x - circle.x, 2) + pow(y - circle.y, 2);
-
-                    if (distance_squared < radius_squared)
-                    {
-                        if (selected_index == i)
-                        {
-                            SDL_Rect pixel_bg = (SDL_Rect){x - 1, y - 1, 3, 3};
-                            SDL_FillRect(surface, &pixel_bg, COLOR_BLUE);
-                        }
-
-                        SDL_Rect pixel = (SDL_Rect){x, y, 1, 1};
-                        SDL_FillRect(surface, &pixel, color);
-                    }
+                    pixels[y * pitch + x] = COLOR_BLUE;
+                }
+                else if (d2 < r2)
+                {
+                    pixels[y * pitch + x] = color;
                 }
             }
         }
     }
+
+    SDL_UnlockSurface(surface);
 }
