@@ -124,6 +124,15 @@ void draw_circles(SDL_Surface *surface, state_t *state, Uint32 color)
         int y0 = (int)(circles[i].y - r);
         int y1 = (int)(circles[i].y + r);
 
+        if (x0 < 0)
+            x0 = 0;
+        if (y0 < 0)
+            y0 = 0;
+        if (x1 > surface->w)
+            x1 = surface->w;
+        if (y1 > surface->h)
+            y1 = surface->h;
+
         double t = 2.5;
         double inner2 = (r - t) * (r - t);
 

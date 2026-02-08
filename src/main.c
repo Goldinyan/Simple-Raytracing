@@ -293,7 +293,7 @@ int main(void)
         }
 
         update_fps(&fps, &last_time, &frame_counter);
-        SDL_Delay(10); // 100 fps
+        SDL_Delay(5); // 200 fps
 
         while (SDL_PollEvent(&e))
         {
