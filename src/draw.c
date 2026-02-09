@@ -9,6 +9,8 @@
 #include "state.h"
 #include "update.h"
 
+#define BORDER_THICKNESS 4
+
 void draw_mirrors(SDL_Surface *surface, state_t *state, Uint32 color)
 {
     size_t mirror_count = state->mirror_count;
@@ -28,7 +30,14 @@ void draw_mirrors(SDL_Surface *surface, state_t *state, Uint32 color)
         int y0 = mirrors[i].y;
         int y1 = mirrors[i].y + mirrors[i].h;
 
-        double t = 2.5;
+        if (x0 < 0)
+            x0 = 0;
+        if (y0 < 0)
+            y0 = 0;
+        if (x1 > surface->w)
+            x1 = surface->w;
+        if (y1 > surface->h)
+            y1 = surface->h;
 
         for (int x = x0; x < x1; x++)
         {
@@ -41,7 +50,7 @@ void draw_mirrors(SDL_Surface *surface, state_t *state, Uint32 color)
                 int inner_dist = ((x1 - x) < (y1 - y)) ? (x1 - x) : (y1 - y);
                 int min_dist = (border_dist < inner_dist) ? border_dist : inner_dist;
 
-                if (min_dist <= (int)t && selected_index == i)
+                if (min_dist <= (int)BORDER_THICKNESS && selected_index == i)
                 {
                     pixels[y * pitch + x] = COLOR_BLUE;
                 }
@@ -75,7 +84,14 @@ void draw_rectangles(SDL_Surface *surface, state_t *state, Uint32 color)
         int y0 = rectangles[i].y;
         int y1 = rectangles[i].y + rectangles[i].h;
 
-        double t = 2.5;
+        if (x0 < 0)
+            x0 = 0;
+        if (y0 < 0)
+            y0 = 0;
+        if (x1 > surface->w)
+            x1 = surface->w;
+        if (y1 > surface->h)
+            y1 = surface->h;
 
         for (int x = x0; x < x1; x++)
         {
@@ -88,7 +104,7 @@ void draw_rectangles(SDL_Surface *surface, state_t *state, Uint32 color)
                 int inner_dist = ((x1 - x) < (y1 - y)) ? (x1 - x) : (y1 - y);
                 int min_dist = (border_dist < inner_dist) ? border_dist : inner_dist;
 
-                if (min_dist <= (int)t && selected_index == i)
+                if (min_dist <= (int)BORDER_THICKNESS && selected_index == i)
                 {
                     pixels[y * pitch + x] = COLOR_BLUE;
                 }
@@ -133,8 +149,7 @@ void draw_circles(SDL_Surface *surface, state_t *state, Uint32 color)
         if (y1 > surface->h)
             y1 = surface->h;
 
-        double t = 2.5;
-        double inner2 = (r - t) * (r - t);
+        double inner2 = (r - BORDER_THICKNESS) * (r - BORDER_THICKNESS);
 
         for (int x = x0; x < x1; x++)
         {
@@ -208,11 +223,11 @@ void draw_all_rays(SDL_Surface *surface, state_t *state)
 
                 draw_single_ray(surface, ray, state->light_sources[i].circle);
 
-                // We only check if it collides with the object circle,
+                // We only check if it collides with BORDER_THICKNESShe object circle,
                 // when it outside of its own light_source circle range.
-                // Like this it doesnt just stop when the center of the light_source
-                // is in the cicle.
-                // It simulates the light coming from the actual edge of the surface
+                // Like BORDER_THICKNESShis it doesnt just stop when BORDER_THICKNESShe center of the light_source
+                // is in BORDER_THICKNESShe cicle.
+                // It simulates BORDER_THICKNESShe light coming from BORDER_THICKNESShe actual edge of the surface
                 // we garantuee
 
                 if (out_of_screen(ray.x, ray.y))
@@ -255,7 +270,7 @@ void draw_light_sources(SDL_Surface *surface, state_t *state, Uint32 color)
     SDL_LockSurface(surface);
 
     Uint32 *pixels = (Uint32 *)surface->pixels;
-    int pitch = surface->pitch / 4; // convert bytes to pixels
+    int pitch = surface->pitch / 4; // convert bytes BORDER_THICKNESSo pixels
 
     for (size_t i = 0; i < count; i++)
     {
@@ -269,6 +284,15 @@ void draw_light_sources(SDL_Surface *surface, state_t *state, Uint32 color)
         int y0 = (int)(c.y - r);
         int y1 = (int)(c.y + r);
 
+        if (x0 < 0)
+            x0 = 0;
+        if (y0 < 0)
+            y0 = 0;
+        if (x1 > surface->w)
+            x1 = surface->w;
+        if (y1 > surface->h)
+            y1 = surface->h;
+
         for (int x = x0; x < x1; x++)
         {
             for (int y = y0; y < y1; y++)
@@ -277,13 +301,11 @@ void draw_light_sources(SDL_Surface *surface, state_t *state, Uint32 color)
                 double dy = y - c.y;
                 double d2 = dx * dx + dy * dy;
 
-                double t = 2.5;
-
-                double inner2 = (r - t) * (r - t);
+                double inner2 = (r - BORDER_THICKNESS) * (r - BORDER_THICKNESS);
 
                 // because everything is squared, we can just substract
-                // t from r and then square it, instead of doing sqrt and
-                // then substracting t and then squaring again
+                // BORDER_THICKNESS from r and BORDER_THICKNESShen square it, instead of doing sqrt and
+                // BORDER_THICKNESShen substracting BORDER_THICKNESS and then squaring again
 
                 if (d2 < r2 && d2 > inner2)
                 {
