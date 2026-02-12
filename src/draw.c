@@ -195,7 +195,7 @@ void draw_single_ray(SDL_Surface *surface, ray_t ray, circle_t base_source)
 
     uint32_t ray_color = (r << 16) | (g << 8) | b;
 
-    //  [Byte 3:Red] [Byte 2:Green] [Byte 1:Blue] [Byte 0:Unused]
+    //  [Byte 3:red] [Byte 2:green] [Byte 1:blue] [Byte 0:Unused]
     //  16 - 23      8 - 15           0 - 7
 
     SDL_Rect ray_point =

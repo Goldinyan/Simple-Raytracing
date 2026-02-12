@@ -4,6 +4,8 @@
 #include "state.h"
 #include "update.h"
 
+#define HIT_BUFFER_DISTANCE 3
+
 int hit_circles(int x, int y, circle_t circles[], int circle_count)
 {
     for (int i = 0; i < circle_count; i++)
@@ -47,20 +49,69 @@ int hit_rectangles(int x, int y, rectangle_t *rectangles, int rectangle_count)
 
 void check_hit_mirrors(ray_t *ray, mirror_t *mirrors, int mirrors_count)
 {
+    double prev_x = ray->x - ray->dx;
+    double prev_y = ray->y - ray->dy;
+
+    int bfr = HIT_BUFFER_DISTANCE;
+
+    {
+        for (int i = 0; i < mirrors_count; i++)
+        {
+
+            mirror_t m = mirrors[i];
+            double x = ray->x;
+            double y = ray->y;
+
+            double d_x1 = fabs(ray->x - m.x);
+            double d_x2 = fabs(ray->x - (m.x + m.w));
+
+            double d_y1 = fabs(ray->y - m.y);
+            double d_y2 = fabs(ray->y - (m.y + m.h));
+
+            if (d_x1 > bfr && d_x2 > bfr && d_y1 > bfr && d_y2 > bfr)
+                continue;
+
+            if ((d_y1 < bfr || d_y2 < bfr) &&
+                x >= m.x &&
+                x <= m.x + m.w)
+            {
+                ray->dy = -ray->dy;
+            }
+
+            if ((d_x1 < bfr || d_x2 < bfr) &&
+                y >= m.y &&
+                y <= m.y + m.h)
+            {
+                ray->dx = -ray->dx;
+            }
+        }
+    }
     for (int i = 0; i < mirrors_count; i++)
     {
-        if ((fabs(ray->x - mirrors[i].x) < 0.7 || fabs(ray->x - (mirrors[i].x + mirrors[i].w)) < 0.7) &&
-            ray->y >= mirrors[i].y &&
-            ray->y <= mirrors[i].y + mirrors[i].h)
-        {
-            ray->dx = -ray->dx;
-        }
+        double x = ray->x;
+        double y = ray->y;
 
-        if ((fabs(ray->y - mirrors[i].y) < 0.7 || fabs(ray->y - (mirrors[i].y + mirrors[i].h)) < 0.7) &&
-            ray->x >= mirrors[i].x &&
-            ray->x <= mirrors[i].x + mirrors[i].w)
+        double d_x1 = fabs(ray->x - mirrors[i].x);
+        double d_x2 = fabs(ray->x - (mirrors[i].x + mirrors[i].w));
+
+        double d_y1 = fabs(ray->y - mirrors[i].y);
+        double d_y2 = fabs(ray->y - (mirrors[i].y + mirrors[i].h));
+
+        if (d_x1 > 1 && d_x2 > 1 && d_y1 > 1 && d_y2 > 1)
+            continue;
+
+        if ((d_y1 < 1 || d_y2 < 1) &&
+            x >= mirrors[i].x &&
+            x <= mirrors[i].x + mirrors[i].w)
         {
             ray->dy = -ray->dy;
+        }
+
+        if ((d_x1 < 1 || d_x2 < 1) &&
+            y >= mirrors[i].y &&
+            y <= mirrors[i].y + mirrors[i].h)
+        {
+            ray->dx = -ray->dx;
         }
     }
 }
