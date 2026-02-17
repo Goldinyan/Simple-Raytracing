@@ -183,7 +183,8 @@ void draw_single_ray(SDL_Surface *surface, ray_t ray, circle_t base_source)
     double dy = ray.y - base_source.y;
     double dist = sqrt(dx * dx + dy * dy);
 
-    double brightness = 1.0 - (dist / 500.0); // intensity
+    double brightness = 1.0 - (dist / 500); // intensity
+
     if (brightness < 0.1)
         brightness = 0.1;
     if (brightness > 1.0)
@@ -306,8 +307,9 @@ void draw_light_sources(SDL_Surface *surface, state_t *state, Uint32 color)
                 // because everything is squared, we can just substract
                 // BORDER_THICKNESS from r and BORDER_THICKNESShen square it, instead of doing sqrt and
                 // BORDER_THICKNESShen substracting BORDER_THICKNESS and then squaring again
+                
 
-                if (d2 < r2 && d2 > inner2)
+                if (d2 < r2 && d2 > inner2 && i == selected)
                 {
                     pixels[y * pitch + x] = COLOR_BLUE;
                 }

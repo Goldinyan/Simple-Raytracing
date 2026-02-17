@@ -127,6 +127,7 @@ void generate_rays(light_source_t *light_sources, int light_source_count)
     {
         for (size_t i = 0; i < RAYS_NUMBER; i++)
         {
+            
             double angle = ((double)i / RAYS_NUMBER) * 2 * M_PI;
             double dy = sin(angle);
             double dx = cos(angle);

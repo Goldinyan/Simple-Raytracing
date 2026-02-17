@@ -1,12 +1,23 @@
 #include "SDL2/SDL_events.h"
+#include "SDL2/SDL_keyboard.h"
 #include "SDL2/SDL_keycode.h"
 #include "SDL2/SDL_stdinc.h"
 #include "SDL2/SDL_surface.h"
 #include <SDL2/SDL.h>
+#include <stdint.h>
+#include <stdlib.h>
 
 #include "draw.h"
 #include "state.h"
 #include "update.h"
+
+typedef int8_t i8;
+typedef int16_t i16;
+typedef int32_t i32;
+typedef int64_t i64;
+
+typedef float f32;
+typedef double f64;
 
 void *get_selected_object(state_t *s)
 {
@@ -226,13 +237,47 @@ void update_fps(int *fps, Uint32 *last_time, double *frame_counter)
     *last_time = current;
     (*frame_counter)++;
 
-    if (*frame_counter >= 120)
+    if (*frame_counter >= 240)
     {
         printf("FPS: %d\n", *fps);
         *frame_counter = 0;
     }
 }
 
+void add_to_array(void **array, size_t *count, void *element, size_t element_size)
+{
+    // **array weil ich den pointer ändern muss
+    void *new_array = realloc(*array, (*count + 1) * element_size);
+    // realloc nimmt den alten pointer und die neue größe,
+    // gibt den neuen pointer zurück, oder NULL wenn fehler
+    if (new_array)
+    {
+        *array = new_array;
+        memcpy((char *)(*array) + (*count * element_size), element, element_size);
+
+        // die funktion memcpy kopiert element_size bytes
+        // von element zu *array + (*count * element_size)
+        // und das funktioniert weil element_size
+        // die größe eines elements ist, und *count die aktuelle anzahl
+        // der elemente im array, also *count * element_size gibt
+        // die byte position des nächsten freien slots im array an.
+        // und char * ist notwendig, weil pointer arithmetik in c immer
+        // die größe des datentyps berücksichtigt,
+        // also wenn ich *array + (*count * element_size) schreiben würde,
+        // würde es um (*count * element_size) * sizeof(void*) bytes verschieben,
+        // was nicht das ist was ich will.
+        // Mit char* wird es um genau (*count * element_size) bytes verschoben,
+        // da sizeof(char) immer 1 ist.
+
+        (*count)++;
+        // count erhöhen
+    }
+    else
+    {
+        // Handle error
+        fprintf(stderr, "Failed to allocate memory for array expansion.\n");
+    }
+}
 int main(void)
 {
 
@@ -307,16 +352,60 @@ int main(void)
             {
                 mouse_x = e.motion.x;
                 mouse_y = e.motion.y;
-                state.light_sources[0].circle.x = mouse_x;
-                state.light_sources[0].circle.y = mouse_y;
+                track_mouse_movement(mouse_x, mouse_y, &state);
                 generate_rays(state.light_sources, state.light_source_count);
             }
 
             if (e.type == SDL_KEYDOWN)
             {
-                if (e.key.keysym.sym == SDLK_RETURN)
+                SDL_Keycode key = e.key.keysym.sym;
+
+                switch (key)
                 {
+
+                // SCALING
+                case SDLK_UP:
+                    track_input(INCREASE_HEIGHT, &state);
+                    break;
+                case SDLK_DOWN:
+                    track_input(DECREASE_HEIGHT, &state);
+                    break;
+                case SDLK_LEFT:
+                    track_input(DECREASE_WIDTH, &state);
+                    break;
+                case SDLK_RIGHT:
+                    track_input(INCREASE_WIDTH, &state);
+                    break;
+
+                    // SPAWNING
+
+                case SDLK_c:
+                    add_to_array((void **)&state.circles, &state.circle_count,
+                                 &(circle_t){mouse_x, mouse_y, 40, 0}, sizeof(circle_t));
+                    break;
+
+                case SDLK_r:
+                    add_to_array((void **)&state.rectangles, &state.rectangle_count,
+                                 &(rectangle_t){mouse_x, mouse_y, 0, 100, 50, 0}, sizeof(rectangle_t));
+                    break;
+
+                case SDLK_l:
+                    add_to_array((void **)&state.light_sources, &state.light_source_count,
+                                 &(light_source_t){.circle = {mouse_x, mouse_y, 40, 0}, .rays = calloc(RAYS_NUMBER, sizeof(ray_t))}, sizeof(light_source_t));
+                    generate_rays(state.light_sources, state.light_source_count);
+                    break;
+
+                case SDLK_m:
+                    add_to_array((void **)&state.mirrors, &state.mirror_count,
+                                 &(mirror_t){mouse_x, mouse_y, 50, 100, 0}, sizeof(mirror_t));
+                    break;
+
+                case SDLK_RETURN:
                     auto_movement = !auto_movement;
+                    break;
+
+                default:
+                    break;
                 }
             }
         }
